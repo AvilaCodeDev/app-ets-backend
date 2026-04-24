@@ -1,38 +1,46 @@
 import express from 'express';
 import cors from 'cors';
-import { createServer, Server as HttpServer } from 'http';
+import { createServer, type Server as HttpServer } from 'http';
+import { authRouter } from '../auth/router';
 
-interface Server{
-    app: express.Application
-    port: number
-    server: HttpServer
-    apiPaht: String
+interface Server {
+    app: express.Application;
+    port: number;
+    server: HttpServer;
+    apiPath: string;
 }
 
 class Server {
-    constructor(){
+    constructor() {
+        this.validateEnv();
         this.app = express();
         this.port = 3000;
-        this.server = createServer( this.app );
-        this.apiPaht = '/api';
+        this.server = createServer(this.app);
+        this.apiPath = '/api';
 
         this.middlewares();
         this.routes();
     }
 
-    middlewares(){
+    private validateEnv() {
+        for (const key of ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'DATABASE_URL']) {
+            if (!process.env[key]) throw new Error(`Missing required env var: ${key}`);
+        }
+    }
+
+    middlewares() {
         this.app.use(cors());
-        this.app.use( express.json());
+        this.app.use(express.json());
     }
 
-    routes(){
-        
+    routes() {
+        this.app.use(`${this.apiPath}/auth`, authRouter);
     }
 
-    listen(){
-        this.server.listen( this.port, () => {
+    listen() {
+        this.server.listen(this.port, () => {
             console.log(`Server running on port: ${this.port}`);
-        })
+        });
     }
 }
 
