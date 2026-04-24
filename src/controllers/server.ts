@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import { createServer, type Server as HttpServer } from 'http';
-import { authRouter } from '../auth/router';
+import { authRouter } from '../auth/router.ts';
+import { usersRouter } from '../users/router.ts';
 
 interface Server {
     app: express.Application;
@@ -35,6 +36,7 @@ class Server {
 
     routes() {
         this.app.use(`${this.apiPath}/auth`, authRouter);
+        this.app.use(`${this.apiPath}/users`, usersRouter);
     }
 
     listen() {
