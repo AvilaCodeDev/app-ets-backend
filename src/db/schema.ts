@@ -1,4 +1,4 @@
-import { pgTable, integer, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, integer, varchar, serial, timestamp } from 'drizzle-orm/pg-core';
 
 export const carreras = pgTable('carreras', {
     id:     integer('id').primaryKey(),
@@ -12,11 +12,19 @@ export const roles = pgTable('roles', {
 });
 
 export const users = pgTable('users', {
-    id:          integer('id').primaryKey(),
-    nombre:      varchar('nombre').notNull(),
-    apPaterno:   varchar('ap_paterno').notNull(),
-    apMaterno:   varchar('ap_materno').notNull(),
-    correo:      varchar('correo').notNull(),
-    pass:        varchar('pass').notNull(),
-    usuarioRol:  integer('usuario_rol').references(() => roles.id),
+    id:         integer('id').primaryKey(),
+    nombre:     varchar('nombre').notNull(),
+    apPaterno:  varchar('ap_paterno').notNull(),
+    apMaterno:  varchar('ap_materno').notNull(),
+    correo:     varchar('correo').notNull(),
+    pass:       varchar('pass').notNull(),
+    usuarioRol: integer('usuario_rol').references(() => roles.id),
+});
+
+export const refreshTokens = pgTable('refresh_tokens', {
+    id:        serial('id').primaryKey(),
+    token:     varchar('token', { length: 512 }).notNull().unique(),
+    userId:    integer('user_id').notNull().references(() => users.id),
+    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
 });
