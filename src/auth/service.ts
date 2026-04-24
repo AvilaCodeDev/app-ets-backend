@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { eq, and, lt } from 'drizzle-orm';
+import { eq, and, lt, gt } from 'drizzle-orm';
 import { db } from '../db/index';
 import { users, refreshTokens } from '../db/schema';
 import {
@@ -7,6 +7,7 @@ import {
     signRefreshToken,
     verifyRefreshToken,
     refreshTokenExpiresAt,
+    hashToken,
     type TokenPayload,
 } from './token';
 
@@ -30,7 +31,7 @@ export async function issueTokens(userId: number): Promise<TokenPair> {
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
     await db.insert(refreshTokens).values({
-        token: refreshToken,
+        token: hashToken(refreshToken),
         userId,
         expiresAt: refreshTokenExpiresAt(),
     });
@@ -40,32 +41,26 @@ export async function issueTokens(userId: number): Promise<TokenPair> {
 export async function rotateRefreshToken(oldToken: string): Promise<TokenPair> {
     const payload = verifyRefreshToken(oldToken);
     const now = new Date();
+    const hashedOld = hashToken(oldToken);
 
-    const [stored] = await db
-        .select()
-        .from(refreshTokens)
-        .where(eq(refreshTokens.token, oldToken));
+    // Atomically consume the old token — only one concurrent request can succeed
+    const [deleted] = await db
+        .delete(refreshTokens)
+        .where(and(eq(refreshTokens.token, hashedOld), gt(refreshTokens.expiresAt, now)))
+        .returning();
 
-    if (!stored || stored.expiresAt < now) {
-        if (stored) {
-            await db.delete(refreshTokens).where(eq(refreshTokens.token, oldToken));
-        }
-        throw new Error('INVALID_REFRESH_TOKEN');
-    }
+    if (!deleted) throw new Error('INVALID_REFRESH_TOKEN');
 
     const newRefreshToken = signRefreshToken({ userId: payload.userId });
     const newAccessToken = signAccessToken({ userId: payload.userId });
 
-    await db.transaction(async (tx) => {
-        await tx.delete(refreshTokens).where(eq(refreshTokens.token, oldToken));
-        await tx.insert(refreshTokens).values({
-            token: newRefreshToken,
-            userId: payload.userId,
-            expiresAt: refreshTokenExpiresAt(),
-        });
+    await db.insert(refreshTokens).values({
+        token: hashToken(newRefreshToken),
+        userId: payload.userId,
+        expiresAt: refreshTokenExpiresAt(),
     });
 
-    // Lazy cleanup: purge other expired tokens for this user
+    // Lazy cleanup: purge other expired tokens for this user (now captured before delete above)
     await db
         .delete(refreshTokens)
         .where(and(eq(refreshTokens.userId, payload.userId), lt(refreshTokens.expiresAt, now)));
@@ -74,5 +69,5 @@ export async function rotateRefreshToken(oldToken: string): Promise<TokenPair> {
 }
 
 export async function revokeRefreshToken(token: string): Promise<void> {
-    await db.delete(refreshTokens).where(eq(refreshTokens.token, token));
+    await db.delete(refreshTokens).where(eq(refreshTokens.token, hashToken(token)));
 }

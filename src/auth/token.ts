@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { createHash } from 'crypto';
 
 export interface TokenPayload {
     userId: number;
@@ -14,18 +15,24 @@ export function signRefreshToken(payload: TokenPayload): string {
 
 export function verifyAccessToken(token: string): TokenPayload {
     const payload = jwt.verify(token, process.env.JWT_SECRET!);
-    if (typeof payload === 'string') throw new Error('Invalid token payload');
-    return payload as TokenPayload;
+    if (typeof payload === 'string' || typeof payload.userId !== 'number') {
+        throw new Error('Invalid token payload');
+    }
+    return { userId: payload.userId };
 }
 
 export function verifyRefreshToken(token: string): TokenPayload {
     const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET!);
-    if (typeof payload === 'string') throw new Error('Invalid token payload');
-    return payload as TokenPayload;
+    if (typeof payload === 'string' || typeof payload.userId !== 'number') {
+        throw new Error('Invalid token payload');
+    }
+    return { userId: payload.userId };
 }
 
 export function refreshTokenExpiresAt(): Date {
-    const d = new Date();
-    d.setDate(d.getDate() + 7);
-    return d;
+    return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+}
+
+export function hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
 }
