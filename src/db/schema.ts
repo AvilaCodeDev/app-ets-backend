@@ -12,11 +12,11 @@ export const roles = pgTable('roles', {
 });
 
 export const users = pgTable('users', {
-    id:         integer('id').primaryKey(),
+    id:         integer('id').primaryKey().generatedAlwaysAsIdentity(),
     nombre:     varchar('nombre').notNull(),
     apPaterno:  varchar('ap_paterno').notNull(),
     apMaterno:  varchar('ap_materno').notNull(),
-    correo:     varchar('correo').notNull(),
+    correo:     varchar('correo').notNull().unique(),
     pass:       varchar('pass').notNull(),
     usuarioRol: integer('usuario_rol').references(() => roles.id),
 });
