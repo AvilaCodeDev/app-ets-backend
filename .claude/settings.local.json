@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx skills *)",
+      "Bash(claude plugin *)",
+      "Bash(cls)",
+      "Bash(clear)",
+      "Read(//c/Users/ocram/Documents/ESCOM/7mo/AplicacionesNativas/proyecto/**)",
+      "Skill(update-config)",
+      "PowerShell(pg_isready *)",
+      "Bash(bun add *)",
+      "Bash(bun run *)",
+      "Bash(bun test-db.ts)",
+      "Bash(bun list-tables.ts)",
+      "Bash(bun introspect.ts)"
+    ]
+  }
+}
