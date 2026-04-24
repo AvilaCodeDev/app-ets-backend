@@ -74,12 +74,21 @@ usersRouter.put('/:id', async (req, res) => {
         pass?: string;
         usuarioRol?: number;
     };
-    const user = await updateUser(id, body);
-    if (!user) {
-        res.status(404).json({ error: 'User not found' });
-        return;
+    try {
+        const user = await updateUser(id, body);
+        if (!user) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+        res.json(user);
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : '';
+        if (msg.includes('unique') || msg.includes('duplicate')) {
+            res.status(409).json({ error: 'correo already in use' });
+            return;
+        }
+        throw err;
     }
-    res.json(user);
 });
 
 usersRouter.delete('/:id', async (req, res) => {
