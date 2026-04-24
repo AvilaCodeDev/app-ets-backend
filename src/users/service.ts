@@ -44,7 +44,7 @@ export async function updateUser(
     id: number,
     input: UpdateUserInput,
 ): Promise<PublicUser | null> {
-    const patch: Partial<UserRow> = { ...input };
+    const patch: UpdateUserInput & { pass?: string } = { ...input };
     if (input.pass) patch.pass = await bcrypt.hash(input.pass, 10);
     const [updated] = await db
         .update(users)
