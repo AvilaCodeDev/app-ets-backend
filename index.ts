@@ -1,7 +1,6 @@
 
-import express  from 'express';
 import dotenv from 'dotenv';
-import { Server } from './src/controllers/server';
+import { Server } from './src/controllers/server.ts';
 
 dotenv.config({ path: '.env'});
 

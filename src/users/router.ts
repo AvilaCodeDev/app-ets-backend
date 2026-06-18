@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { authenticateRequest } from '../auth/middleware.ts';
+import { requireAdmin } from '../auth/admin_middleware.ts';
 import {
     listUsers,
+    listTeachers,
     getUserById,
     createUser,
     updateUser,
@@ -10,14 +12,18 @@ import {
 
 const usersRouter = Router();
 
-usersRouter.use(authenticateRequest);
-
-usersRouter.get('/', async (_req, res) => {
+usersRouter.get('/', authenticateRequest, requireAdmin, async (_req, res) => {
     const data = await listUsers();
     res.json(data);
 });
 
-usersRouter.get('/:id', async (req, res) => {
+// Must come before /:id to avoid Express treating "teachers" as an id param
+usersRouter.get('/teachers', authenticateRequest, requireAdmin, async (_req, res) => {
+    const data = await listTeachers();
+    res.json(data);
+});
+
+usersRouter.get('/:id', authenticateRequest, async (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id < 1) {
         res.status(400).json({ error: 'Invalid id' });
@@ -31,8 +37,8 @@ usersRouter.get('/:id', async (req, res) => {
     res.json(user);
 });
 
-usersRouter.post('/', async (req, res) => {
-    const { nombre, apPaterno, apMaterno, correo, pass, usuarioRol } =
+usersRouter.post('/', authenticateRequest, requireAdmin, async (req, res) => {
+    const { nombre, apPaterno, apMaterno, correo, pass, usuarioRol, carreraId, areaId } =
         req.body as {
             nombre?: string;
             apPaterno?: string;
@@ -40,6 +46,8 @@ usersRouter.post('/', async (req, res) => {
             correo?: string;
             pass?: string;
             usuarioRol?: number;
+            carreraId?: number;
+            areaId?: number;
         };
     if (!nombre || !apPaterno || !apMaterno || !correo || !pass) {
         res.status(400).json({
@@ -48,7 +56,16 @@ usersRouter.post('/', async (req, res) => {
         return;
     }
     try {
-        const user = await createUser({ nombre, apPaterno, apMaterno, correo, pass, usuarioRol });
+        const user = await createUser({
+            nombre,
+            apPaterno,
+            apMaterno,
+            correo,
+            pass,
+            usuarioRol,
+            carreraId,
+            areaId,
+        });
         res.status(201).json(user);
     } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : '';
@@ -60,7 +77,7 @@ usersRouter.post('/', async (req, res) => {
     }
 });
 
-usersRouter.put('/:id', async (req, res) => {
+usersRouter.put('/:id', authenticateRequest, requireAdmin, async (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id < 1) {
         res.status(400).json({ error: 'Invalid id' });
@@ -73,6 +90,8 @@ usersRouter.put('/:id', async (req, res) => {
         correo?: string;
         pass?: string;
         usuarioRol?: number;
+        carreraId?: number | null;
+        areaId?: number | null;
     };
     try {
         const user = await updateUser(id, body);
@@ -91,18 +110,26 @@ usersRouter.put('/:id', async (req, res) => {
     }
 });
 
-usersRouter.delete('/:id', async (req, res) => {
+usersRouter.delete('/:id', authenticateRequest, requireAdmin, async (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id < 1) {
         res.status(400).json({ error: 'Invalid id' });
         return;
     }
-    const deleted = await deleteUser(id);
-    if (!deleted) {
-        res.status(404).json({ error: 'User not found' });
-        return;
+    try {
+        const deleted = await deleteUser(id);
+        if (!deleted) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+        res.sendStatus(204);
+    } catch (err: unknown) {
+        if (err instanceof Error && err.message === 'FK_VIOLATION') {
+            res.status(409).json({ error: 'User is referenced by existing records' });
+            return;
+        }
+        throw err;
     }
-    res.sendStatus(204);
 });
 
 export { usersRouter };

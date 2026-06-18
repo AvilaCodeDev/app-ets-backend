@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { validateUser, issueTokens, rotateRefreshToken, revokeRefreshToken } from './service';
+import { validateUser, issueTokens, rotateRefreshToken, revokeRefreshToken } from './service.ts';
 
 const authRouter = Router();
 

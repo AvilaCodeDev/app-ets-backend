@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { eq, and, lt, gt } from 'drizzle-orm';
-import { db } from '../db/index';
-import { users, refreshTokens } from '../db/schema';
+import { db } from '../db/index.ts';
+import { users, refreshTokens } from '../db/schema.ts';
 import {
     signAccessToken,
     signRefreshToken,
@@ -9,7 +9,7 @@ import {
     refreshTokenExpiresAt,
     hashToken,
     type TokenPayload,
-} from './token';
+} from './token.ts';
 
 export interface TokenPair {
     accessToken: string;
@@ -20,10 +20,16 @@ export async function validateUser(
     correo: string,
     pass: string,
 ): Promise<typeof users.$inferSelect | null> {
-    const [user] = await db.select().from(users).where(eq(users.correo, correo));
-    if (!user) return null;
-    const valid = await bcrypt.compare(pass, user.pass);
-    return valid ? user : null;
+    try{
+        const [user] = await db.select().from(users).where(eq(users.correo, correo));
+        console.log(correo, pass);
+        if (!user) return null;
+        const valid = await bcrypt.compare(pass, user.pass);
+        return valid ? user : null;
+    }catch(e){
+        console.log( e);
+        return null;
+    }
 }
 
 export async function issueTokens(userId: number): Promise<TokenPair> {

@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { verifyAccessToken } from './token';
+import { verifyAccessToken } from './token.ts';
 
 declare global {
     namespace Express {
