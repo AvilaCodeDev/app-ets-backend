@@ -28,9 +28,10 @@ const upload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 } });
 // ─── Public ETS list ──────────────────────────────────────────────────────────
 
 etsRouter.get('/', async (req, res) => {
-    const { carrera_id, turno } = req.query as { carrera_id?: string; turno?: string };
+    const { carrera_id, area_id, turno } = req.query as { carrera_id?: string; area_id?: string; turno?: string };
     const filters: Parameters<typeof listEts>[0] = {};
     if (carrera_id) filters.carreraId = Number(carrera_id);
+    if (area_id) filters.areaId = Number(area_id);
     if (turno === 'MATUTINO' || turno === 'VESPERTINO') filters.turno = turno;
     const data = await listEts(filters);
     res.json(data);

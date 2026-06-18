@@ -26,10 +26,12 @@ export type EtsWithRefs = {
 
 export async function listEts(filters?: {
     carreraId?: number;
+    areaId?: number;
     turno?: 'MATUTINO' | 'VESPERTINO';
 }): Promise<EtsWithRefs[]> {
     const conditions = [];
     if (filters?.carreraId) conditions.push(eq(materias.carreraId, filters.carreraId));
+    if (filters?.areaId) conditions.push(eq(materias.areaId, filters.areaId));
     if (filters?.turno) conditions.push(eq(ets.turno, filters.turno));
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -93,7 +95,7 @@ async function validateTeacherAssignment(profesorId: number, materiaId: number):
         .from(materias)
         .where(eq(materias.id, materiaId));
     if (!teacher || !materia) throw new Error('NOT_FOUND');
-    if (teacher.carreraId !== materia.carreraId || teacher.areaId !== materia.areaId) {
+    if (teacher.areaId !== materia.areaId) {
         throw new Error('TEACHER_MISMATCH');
     }
 }
