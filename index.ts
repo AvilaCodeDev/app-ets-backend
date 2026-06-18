@@ -1,8 +1,8 @@
 
 import dotenv from 'dotenv';
-import { Server } from './src/controllers/server.ts';
 
-dotenv.config({ path: '.env'});
+dotenv.config({ path: '.env', override: true });
 
+const { Server } = await import('./src/controllers/server.ts');
 const server = new Server();
 server.listen();
