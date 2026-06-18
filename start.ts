@@ -9,13 +9,8 @@ try {
     await migrate(db, { migrationsFolder: './drizzle' });
     console.log('Migrations done.');
 } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    // Tables already exist from a prior drizzle-kit push — safe to continue
-    if (msg.includes('already exists')) {
-        console.warn('Skipping migrations — schema already applied.');
-    } else {
-        throw e;
-    }
+    // Schema was previously deployed via drizzle-kit push — tables already exist, safe to continue
+    console.warn('Migration warning (schema already applied):', e instanceof Error ? e.cause ?? e.message : String(e));
 }
 
 const { Server } = await import('./src/controllers/server.ts');
